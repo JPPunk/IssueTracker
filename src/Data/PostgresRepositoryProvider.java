@@ -61,7 +61,7 @@ public class PostgresRepositoryProvider implements IRepositoryProvider {
             	int resolver = rset.getInt("resolver");
             	issue.setResolver(resolver);            	
             	int verifier = rset.getInt("verifier");
-            	issue.setResolver(verifier);
+            	issue.setVerifier(verifier);
             	String desc = rset.getString("description");
             	issue.setDescription(desc);
             	String title = rset.getString("title");
@@ -74,7 +74,8 @@ public class PostgresRepositoryProvider implements IRepositoryProvider {
             
             if ( nr == 0 )
             	 System.out.println("No entries found.");
-            	stmt.close();
+        	stmt.close();
+        	conn.close();
             	
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -97,9 +98,49 @@ public class PostgresRepositoryProvider implements IRepositoryProvider {
 		
 		Vector<Issue> results = new Vector<Issue>();
 		// TODO - find necessary issues using sql database based on search input
-		
-		return results;
+		try {
+			Connection conn = openConnection();
+			String sql = "SELECT * FROM A3_ISSUE " 
+					+ "WHERE (creator=? OR resolver=? OR verifier=?) "
+					+ "AND title like ? ORDER BY title";
+			PreparedStatement stmt = conn.prepareStatement(sql);
+			stmt.setInt(1, userId);
+			stmt.setInt(2, userId);
+			stmt.setInt(3, userId);
+			stmt.setString(4, "%" + searchString + "%");
+			ResultSet rset = stmt.executeQuery(); 
+            int nr = 0;
+            while (rset.next()) {
+            	nr++;
+            	Issue issue = new Issue();
+            	/*Create Issue object*/
+            	int creator = rset.getInt("creator");
+            	issue.setCreator(creator);
+            	int resolver = rset.getInt("resolver");
+            	issue.setResolver(resolver);            	
+            	int verifier = rset.getInt("verifier");
+            	issue.setResolver(verifier);
+            	String desc = rset.getString("description");
+            	issue.setDescription(desc);
+            	String title = rset.getString("title");
+            	issue.setTitle(title);
+            	int issueId = rset.getInt("issue_id");
+            	issue.setId(issueId);
+            	//Add object to results.
+            	results.addElement(issue);
+            }
+
+            if ( nr == 0 )
+            	 System.out.println("No entries found.");
+            stmt.close();
+            conn.close();
+            	
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 	}
+		return results;
+		}
 
 	/**
 	 * Add the details for a new issue to the database
@@ -109,6 +150,28 @@ public class PostgresRepositoryProvider implements IRepositoryProvider {
 	public void addIssue(Issue issue) {
 	    //TODO - add an issue
 	    //Insert a new issue to database
+		try {
+			int creator = issue.getCreator();
+			int resolver = issue.getResolver();
+			int verifier = issue.getVerifier();
+			String desc = issue.getDescription();
+			String title = issue.getTitle();
+			Connection conn = openConnection();
+			String sql_user = "INSERT INTO a3_issue(title, creator, resolver, verifier, description) "
+					+ "VALUES(?, ?, ?, ?, ?)";
+			PreparedStatement stmt = conn.prepareStatement(sql_user);
+			stmt.setString(1, title);
+			stmt.setInt(2, creator);
+			stmt.setInt(3, resolver);
+			stmt.setInt(4, verifier);
+			stmt.setString(5, desc);;
+			stmt.executeUpdate();
+        	stmt.close();
+        	conn.close();
+		} catch (SQLException e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -118,5 +181,29 @@ public class PostgresRepositoryProvider implements IRepositoryProvider {
 	@Override
 	public void updateIssue(Issue issue) {
 		//TODO - update the issue using db
+		try {
+			int creator = issue.getCreator();
+			int resolver = issue.getResolver();
+			int verifier = issue.getVerifier();
+			String desc = issue.getDescription();
+			String title = issue.getTitle();
+			int issueId = issue.getId();
+			Connection conn = openConnection();
+			String sql_user = "UPDATE a3_issue SET title=?, creator=?, resolver=?, verifier=?, description=? "
+					+ "WHERE issue_id=?";
+			PreparedStatement stmt = conn.prepareStatement(sql_user);
+			stmt.setString(1, title);
+			stmt.setInt(2, creator);
+			stmt.setInt(3, resolver);
+			stmt.setInt(4, verifier);
+			stmt.setString(5, desc);;
+			stmt.setInt(6, issueId);
+			stmt.executeUpdate();
+        	stmt.close();
+        	conn.close();
+		} catch (SQLException e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
 	}
 }
